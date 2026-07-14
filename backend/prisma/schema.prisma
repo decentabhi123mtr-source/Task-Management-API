@@ -1,0 +1,125 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id               String            @id @default(uuid())
+  name             String
+  email            String            @unique
+  password_hash    String
+  created_at       DateTime          @default(now())
+  
+  // Relations
+  workspaces       Workspace[]       @relation("WorkspaceOwner")
+  workspaceMembers WorkspaceMember[]
+  tasks            Task[]
+  comments         Comment[]
+  notifications    Notification[]
+  attachments      Attachment[]
+  activityLogs     ActivityLog[]
+}
+
+model Workspace {
+  id         String            @id @default(uuid())
+  name       String
+  owner_id   String
+  owner      User              @relation("WorkspaceOwner", fields: [owner_id], references: [id], onDelete: Cascade)
+  
+  // Relations
+  members    WorkspaceMember[]
+  projects   Project[]
+}
+
+model WorkspaceMember {
+  id           String    @id @default(uuid())
+  user_id      String
+  workspace_id String
+  role         String    @default("MEMBER") // OWNER, ADMIN, MEMBER
+  
+  user         User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  workspace    Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, workspace_id])
+}
+
+model Project {
+  id           String    @id @default(uuid())
+  workspace_id String
+  name         String
+  status       String    @default("Active")
+  
+  workspace    Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  tasks        Task[]
+}
+
+model Task {
+  id          String    @id @default(uuid())
+  project_id  String
+  assignee_id String?
+  title       String
+  status      String    @default("TODO") // TODO, IN_PROGRESS, DONE
+  priority    String    @default("MEDIUM") // HIGH, MEDIUM, LOW
+  due_date    String?
+  
+  project     Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  assignee    User?     @relation(fields: [assignee_id], references: [id], onDelete: SetNull)
+  comments    Comment[]
+  notifications Notification[]
+  attachments  Attachment[]
+  activityLogs ActivityLog[]
+}
+
+model Comment {
+  id         String   @id @default(uuid())
+  task_id    String
+  user_id    String
+  body       String
+  created_at DateTime @default(now())
+  
+  task       Task     @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id          String           @id @default(uuid())
+  user_id     String
+  type        String           // ASSIGNED, MENTIONED, COMMENTED
+  message     String
+  task_id     String?
+  is_read     Boolean          @default(false)
+  created_at  DateTime         @default(now())
+
+  task        Task?            @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  user        User             @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model Attachment {
+  id            String   @id @default(uuid())
+  task_id       String
+  uploaded_by   String
+  file_name     String   // original filename shown to users
+  stored_name   String   // actual filename on disk (uuid-based, to avoid collisions)
+  file_size     Int      // in bytes
+  mime_type     String
+  created_at    DateTime @default(now())
+
+  task          Task     @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  uploader      User     @relation(fields: [uploaded_by], references: [id], onDelete: Cascade)
+}
+
+model ActivityLog {
+  id          String   @id @default(uuid())
+  task_id     String
+  user_id     String
+  message     String
+  created_at  DateTime @default(now())
+
+  task        Task     @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
