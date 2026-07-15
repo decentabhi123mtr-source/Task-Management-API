@@ -36,9 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (name: string, email: string, password?: string) => {
     setIsLoading(true);
     try {
-      const response = await authApi.register({ name, email, password });
-      setAuthToken(response.token);
-      setUser(response.user);
+      await authApi.register({ name, email, password });
     } finally {
       setIsLoading(false);
     }

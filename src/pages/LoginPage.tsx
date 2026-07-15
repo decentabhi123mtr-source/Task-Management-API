@@ -10,21 +10,26 @@ export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
     setLoading(true);
 
     try {
       if (isRegister) {
         await register(name, email, password);
+        setSuccess('Registration successful! Please sign in with your credentials.');
+        setIsRegister(false);
+        setPassword('');
       } else {
         await login(email, password);
+        // After success, navigate to workspace selection page
+        navigate('/workspaces');
       }
-      // After success, navigate to workspace selection page
-      navigate('/workspaces');
     } catch (err: any) {
       console.error(err);
       setError(err.response?.data?.message || err.message || 'An error occurred during authentication');
@@ -47,6 +52,7 @@ export const LoginPage: React.FC = () => {
               onClick={() => {
                 setIsRegister(!isRegister);
                 setError(null);
+                setSuccess(null);
               }}
               className="font-medium text-neutral-900 underline hover:text-neutral-700 focus:outline-none"
             >
@@ -60,6 +66,12 @@ export const LoginPage: React.FC = () => {
             {error && (
               <div className="rounded-md bg-red-50 p-4 border border-red-200">
                 <p className="text-sm text-red-600">{error}</p>
+              </div>
+            )}
+
+            {success && (
+              <div className="rounded-md bg-green-50 p-4 border border-green-200">
+                <p className="text-sm text-green-600">{success}</p>
               </div>
             )}
 
