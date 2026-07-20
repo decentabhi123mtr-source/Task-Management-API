@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: collab-task-backend
+    env: node
+    rootDir: backend
+    buildCommand: npm install && npx prisma generate
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        value: super-secret-jwt-key-2026-change-me
+      - key: FRONTEND_URL
+        value: '*'

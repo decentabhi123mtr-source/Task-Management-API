@@ -4,6 +4,7 @@
   "description": "Backend API for Collaborative Task Management app",
   "main": "src/server.js",
   "scripts": {
+    "build": "npx prisma generate",
     "start": "node src/server.js",
     "dev": "nodemon src/server.js"
   },
