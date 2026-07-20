@@ -249,3 +249,48 @@ exports.deleteTask = async (req, res) => {
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
+
+// GET /api/tasks/overdue - Get all overdue tasks assigned to the logged-in user
+exports.getOverdueTasks = async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const userTasks = await prisma.task.findMany({
+      where: {
+        assignee_id: userId,
+        status: { not: 'DONE' },
+        due_date: { not: null },
+      },
+      include: {
+        project: {
+          select: {
+            id: true,
+            name: true,
+            workspace_id: true,
+            workspace: {
+              select: { id: true, name: true },
+            },
+          },
+        },
+      },
+    });
+
+    const now = new Date();
+    const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
+    const overdueTasks = userTasks.filter((t) => {
+      if (!t.due_date) return false;
+      const dateOnly = t.due_date.split('T')[0];
+      const parts = dateOnly.split('-');
+      if (parts.length < 3) return false;
+
+      const taskDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10)).getTime();
+      return taskDate < todayMidnight;
+    });
+
+    return res.json(overdueTasks);
+  } catch (error) {
+    console.error('Get overdue tasks error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};

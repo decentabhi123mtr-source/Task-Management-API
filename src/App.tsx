@@ -6,6 +6,8 @@ import { LoginPage } from './pages/LoginPage';
 import { WorkspacePage } from './pages/WorkspacePage';
 import { BoardPage } from './pages/BoardPage';
 
+import { OverdueTasksModal } from './components/OverdueTasksModal';
+
 // A wrapper to protect private routes
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -22,7 +24,12 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
     return <Navigate to="/login" replace />;
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      <OverdueTasksModal />
+      {children}
+    </>
+  );
 };
 
 // Route controller for root path

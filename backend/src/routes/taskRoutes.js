@@ -7,6 +7,7 @@ const authMiddleware = require('../middleware/auth');
 // Protect all routes
 router.use(authMiddleware);
 
+router.get('/overdue', taskController.getOverdueTasks);
 router.patch('/:id', taskController.updateTask);
 router.delete('/:id', taskController.deleteTask);
 

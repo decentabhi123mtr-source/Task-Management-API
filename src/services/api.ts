@@ -145,6 +145,8 @@ export const projectApi = {
 };
 
 export const taskApi = {
+  getOverdue: () => 
+    api.get<Task[]>('/tasks/overdue').then(res => res.data),
   update: (taskId: string, data: Partial<Task>) => 
     api.patch<Task>(`/tasks/${taskId}`, data).then(res => res.data),
   delete: (taskId: string) => 
