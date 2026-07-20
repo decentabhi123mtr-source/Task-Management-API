@@ -112,6 +112,8 @@ export const authApi = {
     api.post<{ token: string; user: User }>('/auth/register', data).then(res => res.data),
   login: (data: { email: string; password?: string }) => 
     api.post<{ token: string; user: User }>('/auth/login', data).then(res => res.data),
+  resetPassword: (data: { email: string; newPassword?: string }) => 
+    api.post<{ message: string }>('/auth/reset-password', data).then(res => res.data),
 };
 
 export const workspaceApi = {
