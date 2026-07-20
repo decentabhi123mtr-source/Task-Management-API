@@ -1,4 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 // POST /api/workspaces - Create workspace
@@ -79,15 +80,23 @@ exports.inviteMember = async (req, res) => {
       return res.status(403).json({ message: 'Access denied: You are not a member of this workspace' });
     }
 
-    // Check if requester has authority (ADMIN or OWNER) to invite if we want,
-    // or just let any workspace member invite (as per instructions: "add a user by email as MEMBER")
-    // Let's check if the target user exists
-    const targetUser = await prisma.user.findUnique({
-      where: { email },
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Check if target user exists; if not, create account for them
+    let targetUser = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
     });
 
     if (!targetUser) {
-      return res.status(404).json({ message: 'User with this email not found' });
+      const name = normalizedEmail.split('@')[0];
+      const hashedPassword = await bcrypt.hash('password123', 10);
+      targetUser = await prisma.user.create({
+        data: {
+          name,
+          email: normalizedEmail,
+          password_hash: hashedPassword,
+        },
+      });
     }
 
     // Check if target user is already in the workspace

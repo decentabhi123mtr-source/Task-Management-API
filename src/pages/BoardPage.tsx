@@ -39,6 +39,7 @@ export const BoardPage: React.FC = () => {
   const [isNewTaskOpen, setIsNewTaskOpen] = useState(false);
   const [isSubmittingTask, setIsSubmittingTask] = useState(false);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [isSubmittingInvite, setIsSubmittingInvite] = useState(false);
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
 
@@ -228,6 +229,7 @@ export const BoardPage: React.FC = () => {
     e.preventDefault();
     if (!inviteEmail.trim() || !workspaceId) return;
 
+    setIsSubmittingInvite(true);
     try {
       await workspaceApi.invite(workspaceId, { email: inviteEmail, role: inviteRole });
       toast.success(`Sent invitation to ${inviteEmail}`);
@@ -239,6 +241,8 @@ export const BoardPage: React.FC = () => {
     } catch (err: any) {
       console.error('Failed to invite member', err);
       toast.error(err.response?.data?.message || 'Failed to invite member');
+    } finally {
+      setIsSubmittingInvite(false);
     }
   };
 
@@ -821,9 +825,17 @@ export const BoardPage: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white rounded-lg text-xs font-semibold"
+                  disabled={isSubmittingInvite}
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white rounded-lg text-xs font-semibold disabled:bg-neutral-400 disabled:cursor-not-allowed"
                 >
-                  send invitation
+                  {isSubmittingInvite ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <span>sending...</span>
+                    </>
+                  ) : (
+                    <span>send invitation</span>
+                  )}
                 </button>
               </div>
             </form>
