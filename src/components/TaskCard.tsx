@@ -1,6 +1,6 @@
 import React from 'react';
 import { Task } from '../services/api';
-import { Calendar, MessageSquare } from 'lucide-react';
+import { Calendar, MessageSquare, Clock, AlertTriangle } from 'lucide-react';
 
 interface TaskCardProps {
   task: Task;
@@ -18,8 +18,56 @@ export const getInitials = (name?: string): string => {
     .slice(0, 2);
 };
 
+export const getDueDateBadge = (dueDateStr?: string, status?: string) => {
+  if (!dueDateStr || status === 'DONE') return null;
+
+  // Extract YYYY-MM-DD parts to calculate in local timezone
+  const dateOnly = dueDateStr.split('T')[0];
+  const parts = dateOnly.split('-');
+  if (parts.length < 3) return null;
+
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10) - 1; // 0-indexed month
+  const day = parseInt(parts[2], 10);
+
+  const dueDate = new Date(year, month, day);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const diffTime = dueDate.getTime() - today.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) {
+    return {
+      label: 'Overdue',
+      className: 'bg-rose-100 text-rose-800 border-rose-300',
+      icon: <AlertTriangle className="h-3 w-3 shrink-0 text-rose-600" />,
+    };
+  }
+  if (diffDays === 0) {
+    return {
+      label: 'Due Today',
+      className: 'bg-amber-100 text-amber-800 border-amber-300',
+      icon: <Clock className="h-3 w-3 shrink-0 text-amber-600" />,
+    };
+  }
+  if (diffDays === 1) {
+    return {
+      label: '1 day left',
+      className: 'bg-blue-50 text-blue-700 border-blue-200',
+      icon: <Calendar className="h-3 w-3 shrink-0 text-blue-500" />,
+    };
+  }
+  return {
+    label: `${diffDays} days left`,
+    className: 'bg-neutral-100 text-neutral-600 border-neutral-200',
+    icon: <Calendar className="h-3 w-3 shrink-0 text-neutral-400" />,
+  };
+};
+
 export const TaskCard: React.FC<TaskCardProps> = ({ task, commentCount, onClick }) => {
   const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.setData('taskId', task.id);
     e.dataTransfer.setData('text/plain', task.id);
     e.dataTransfer.effectAllowed = 'move';
   };
@@ -37,6 +85,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, commentCount, onClick 
     }
   };
 
+  const dueBadge = getDueDateBadge(task.due_date, task.status);
+
   return (
     <div
       draggable
@@ -51,14 +101,15 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, commentCount, onClick 
       </div>
 
       <div className="flex flex-wrap gap-2 items-center justify-between pt-1">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getPriorityStyle(task.priority)}`}>
             {task.priority.toLowerCase()}
           </span>
-          {task.due_date && (
-            <div className="flex items-center gap-1 text-xs text-neutral-500">
-              <Calendar className="h-3 w-3" />
-              <span>{task.due_date}</span>
+
+          {dueBadge && (
+            <div className={`flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border ${dueBadge.className}`}>
+              {dueBadge.icon}
+              <span>{dueBadge.label}</span>
             </div>
           )}
         </div>
