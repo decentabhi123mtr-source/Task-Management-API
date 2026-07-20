@@ -12,3 +12,5 @@ services:
         value: super-secret-jwt-key-2026-change-me
       - key: FRONTEND_URL
         value: '*'
+      - key: GOOGLE_SHEET_WEBHOOK_URL
+        sync: false

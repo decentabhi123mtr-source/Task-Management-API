@@ -33,6 +33,20 @@ exports.register = async (req, res) => {
 
     const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '7d' });
 
+    // Sync new user details to Google Sheet asynchronously if webhook URL is provided
+    if (process.env.GOOGLE_SHEET_WEBHOOK_URL) {
+      fetch(process.env.GOOGLE_SHEET_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: user.name,
+          email: user.email,
+          createdAt: new Date().toISOString(),
+        }),
+        redirect: 'follow',
+      }).catch((err) => console.error('Google Sheet sync error:', err.message));
+    }
+
     return res.status(201).json({
       token,
       user: {
