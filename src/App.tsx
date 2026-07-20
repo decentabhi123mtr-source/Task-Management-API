@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LoginPage } from './pages/LoginPage';
 import { WorkspacePage } from './pages/WorkspacePage';
@@ -33,6 +34,18 @@ const RootRoute: React.FC = () => {
 function App() {
   return (
     <AuthProvider>
+      <Toaster 
+        position="top-right" 
+        toastOptions={{ 
+          duration: 3500,
+          style: {
+            borderRadius: '8px',
+            background: '#171717',
+            color: '#fff',
+            fontSize: '14px'
+          }
+        }} 
+      />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<RootRoute />} />

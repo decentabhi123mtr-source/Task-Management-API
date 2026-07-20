@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { attachmentApi, Attachment } from '../services/api';
+import toast from 'react-hot-toast';
 import { 
   FileImage, 
   FileText, 
@@ -66,7 +67,7 @@ export const AttachmentList: React.FC<AttachmentListProps> = ({
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Download failed:', err);
-      alert('failed to download file. Please try again.');
+      toast.error('Failed to download file. Please try again.');
     } finally {
       setDownloadingId(null);
     }
@@ -79,9 +80,10 @@ export const AttachmentList: React.FC<AttachmentListProps> = ({
     try {
       await attachmentApi.delete(attachment.id);
       onDeleteSuccess(attachment.id);
+      toast.success(`Removed '${attachment.file_name}'`);
     } catch (err) {
       console.error('Delete attachment failed:', err);
-      alert('failed to delete attachment. Please check permissions.');
+      toast.error('Failed to delete attachment');
     } finally {
       setDeletingId(null);
     }

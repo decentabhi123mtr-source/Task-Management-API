@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { attachmentApi, Attachment } from '../services/api';
+import toast from 'react-hot-toast';
 import { Paperclip, Loader2, AlertCircle } from 'lucide-react';
 
 interface AttachmentUploaderProps {
@@ -30,6 +31,7 @@ export const AttachmentUploader: React.FC<AttachmentUploaderProps> = ({
     try {
       const newAttachment = await attachmentApi.upload(taskId, file);
       onUploadSuccess(newAttachment);
+      toast.success(`Attached '${file.name}'`);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -37,6 +39,7 @@ export const AttachmentUploader: React.FC<AttachmentUploaderProps> = ({
       console.error('Upload failed:', err);
       const serverMessage = err.response?.data?.message || 'failed to upload file. Please try again.';
       setError(serverMessage.toLowerCase());
+      toast.error(serverMessage);
     } finally {
       setIsUploading(false);
     }

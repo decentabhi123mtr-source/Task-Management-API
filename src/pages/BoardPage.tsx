@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import {
   workspaceApi,
   projectApi,
@@ -142,6 +143,7 @@ export const BoardPage: React.FC = () => {
     try {
       const createdTask = await projectApi.createTask(projectId, taskData);
       setTasks((prev) => [...prev, createdTask]);
+      toast.success('Task created successfully');
 
       // Reset Form
       setNewTaskTitle('');
@@ -151,7 +153,7 @@ export const BoardPage: React.FC = () => {
       setIsNewTaskOpen(false);
     } catch (err: any) {
       console.error('Failed to create task', err);
-      alert(err.response?.data?.message || 'failed to create task');
+      toast.error(err.response?.data?.message || 'Failed to create task');
     }
   };
 
@@ -175,9 +177,10 @@ export const BoardPage: React.FC = () => {
 
     try {
       await taskApi.update(selectedTask.id, fields);
+      toast.success('Task updated');
     } catch (err: any) {
       console.error('Failed to update task detail in API', err);
-      alert(err.response?.data?.message || 'failed to update task');
+      toast.error(err.response?.data?.message || 'Failed to update task');
     }
   };
 
@@ -186,12 +189,13 @@ export const BoardPage: React.FC = () => {
 
     // Optimistically delete locally
     setTasks((prev) => prev.filter((t) => t.id !== selectedTask.id));
+    toast.success('Task deleted');
 
     try {
       await taskApi.delete(selectedTask.id);
     } catch (err: any) {
       console.error('Failed to delete task in API', err);
-      alert(err.response?.data?.message || 'failed to delete task');
+      toast.error(err.response?.data?.message || 'Failed to delete task');
       // Revert
       const t = await projectApi.getTasks(projectId || '');
       setTasks(t);
@@ -204,8 +208,10 @@ export const BoardPage: React.FC = () => {
     try {
       const comment = await taskApi.addComment(selectedTask.id, { body });
       setSelectedTaskComments((prev) => [...prev, comment]);
+      toast.success('Comment added');
     } catch (err: any) {
       console.error('Failed to post comment to API', err);
+      toast.error('Failed to add comment');
       throw err;
     }
   };
@@ -217,7 +223,7 @@ export const BoardPage: React.FC = () => {
 
     try {
       await workspaceApi.invite(workspaceId, { email: inviteEmail, role: inviteRole });
-      alert(`successfully sent workspace invitation to ${inviteEmail}`);
+      toast.success(`Sent invitation to ${inviteEmail}`);
       setInviteEmail('');
       setIsInviteOpen(false);
       // Reload members list
@@ -225,7 +231,7 @@ export const BoardPage: React.FC = () => {
       setMembers(workspaceMembers);
     } catch (err: any) {
       console.error('Failed to invite member', err);
-      alert(err.response?.data?.message || 'failed to invite member');
+      toast.error(err.response?.data?.message || 'Failed to invite member');
     }
   };
 
@@ -237,12 +243,13 @@ export const BoardPage: React.FC = () => {
     try {
       const newProj = await workspaceApi.createProject(workspaceId, { name: newProjectName });
       setProjectsList((prev) => [...prev, newProj]);
+      toast.success(`Project '${newProj.name}' created`);
       navigate(`/workspaces/${workspaceId}/projects/${newProj.id}`);
       setNewProjectName('');
       setIsNewProjectOpen(false);
     } catch (err: any) {
       console.error('Failed to create project', err);
-      alert(err.response?.data?.message || 'failed to create project');
+      toast.error(err.response?.data?.message || 'Failed to create project');
     }
   };
 

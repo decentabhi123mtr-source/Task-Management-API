@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { workspaceApi, Workspace } from '../services/api';
 import { Plus, LayoutGrid, Loader2, LogOut, ArrowRight, FolderOpen } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -22,7 +23,9 @@ export const WorkspacePage: React.FC = () => {
       setWorkspaces(data);
     } catch (err: any) {
       console.error('Failed to load workspaces:', err);
-      setError(err.response?.data?.message || 'failed to load workspaces from server');
+      const msg = err.response?.data?.message || 'failed to load workspaces from server';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
@@ -48,7 +51,9 @@ export const WorkspacePage: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Failed to resolve workspace projects', err);
-      setError(err.response?.data?.message || 'failed to load workspace projects');
+      const msg = err.response?.data?.message || 'failed to load workspace projects';
+      setError(msg);
+      toast.error(msg);
       setIsLoading(false);
     }
   };
@@ -62,10 +67,13 @@ export const WorkspacePage: React.FC = () => {
     try {
       const ws = await workspaceApi.create({ name: newWorkspaceName });
       setWorkspaces((prev) => [...prev, ws]);
+      toast.success(`Workspace '${ws.name}' created`);
       setNewWorkspaceName('');
       setIsNewWorkspaceOpen(false);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'failed to create workspace');
+      const msg = err.response?.data?.message || 'failed to create workspace';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
