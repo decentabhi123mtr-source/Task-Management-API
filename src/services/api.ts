@@ -64,6 +64,7 @@ export interface Task {
   status: 'TODO' | 'IN_PROGRESS' | 'DONE';
   priority: 'HIGH' | 'MEDIUM' | 'LOW';
   due_date?: string;
+  created_at?: string;
 }
 
 export interface Comment {

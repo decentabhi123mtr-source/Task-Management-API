@@ -14,8 +14,9 @@ import {
 import { TaskCard } from '../components/TaskCard';
 import { TaskDetailModal } from '../components/TaskDetailModal';
 import { NotificationBell } from '../components/NotificationBell';
-import { Plus, Users, ArrowLeft, Loader2, X, Search, RotateCcw } from 'lucide-react';
+import { Plus, Users, ArrowLeft, Loader2, X, Search, RotateCcw, Download, ChevronDown, FileSpreadsheet, FileText } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { exportTasksToCSV, exportTasksToPDF } from '../utils/exportUtils';
 
 export const BoardPage: React.FC = () => {
   const { workspaceId, projectId } = useParams<{ workspaceId: string; projectId: string }>();
@@ -39,6 +40,7 @@ export const BoardPage: React.FC = () => {
   const [isSubmittingTask, setIsSubmittingTask] = useState(false);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
 
   // Form States
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -267,6 +269,9 @@ export const BoardPage: React.FC = () => {
     );
   }
 
+  // Identify current user's role in the workspace
+  const currentUserRole = members.find((m) => m.id === user?.id)?.role || 'MEMBER';
+
   // Filter state synced with URL search parameters
   const searchQuery = searchParams.get('search') || '';
   const priorityFilter = searchParams.get('priority') || 'ALL';
@@ -358,6 +363,57 @@ export const BoardPage: React.FC = () => {
               }
             }}
           />
+
+          {/* Role-gated Export Option (Owner/Admin) */}
+          {['OWNER', 'ADMIN'].includes(currentUserRole) && (
+            <div className="relative">
+              <button
+                onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
+                className="inline-flex items-center gap-1.5 text-neutral-600 hover:text-neutral-900 text-xs font-semibold px-3 py-1.5 rounded-lg border border-neutral-200 hover:border-neutral-300 transition-all bg-white"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span>export</span>
+                <ChevronDown className="h-3 w-3 text-neutral-400" />
+              </button>
+
+              {isExportMenuOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setIsExportMenuOpen(false)}
+                  />
+                  <div className="absolute right-0 mt-1.5 w-44 bg-white border border-neutral-200 rounded-xl shadow-lg py-1 z-50 overflow-hidden">
+                    <button
+                      onClick={() => {
+                        setIsExportMenuOpen(false);
+                        exportTasksToCSV(currentProject?.name || 'project', filteredTasks);
+                        toast.success('Exported tasks to CSV');
+                      }}
+                      className="w-full text-left px-3.5 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 flex items-center gap-2"
+                    >
+                      <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" />
+                      <span>Export as CSV</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsExportMenuOpen(false);
+                        exportTasksToPDF(
+                          currentProject?.name || 'project',
+                          currentWorkspace?.name || 'workspace',
+                          filteredTasks
+                        );
+                        toast.success('Exported project report to PDF');
+                      }}
+                      className="w-full text-left px-3.5 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 flex items-center gap-2"
+                    >
+                      <FileText className="h-3.5 w-3.5 text-rose-600" />
+                      <span>Export as PDF</span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
 
           <button
             onClick={() => setIsInviteOpen(true)}
