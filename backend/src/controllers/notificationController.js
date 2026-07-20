@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../prisma');
 
 // GET /api/notifications - Get logged-in user's notifications
 exports.listNotifications = async (req, res) => {

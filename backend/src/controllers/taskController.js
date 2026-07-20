@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../prisma');
 
 // Helper to check if user is a member of the workspace associated with a project
 const checkProjectMembership = async (userId, projectId) => {

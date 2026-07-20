@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../prisma');
 
 // Helper to check membership via a taskId
 const checkTaskMembership = async (userId, taskId) => {

@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../prisma');
 const path = require('path');
 const fs = require('fs');
 const { canDeleteAttachment } = require('../permissions');

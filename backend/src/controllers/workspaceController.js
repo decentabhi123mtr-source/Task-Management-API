@@ -1,6 +1,5 @@
-const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
-const prisma = new PrismaClient();
+const prisma = require('../prisma');
 
 // POST /api/workspaces - Create workspace
 exports.createWorkspace = async (req, res) => {
