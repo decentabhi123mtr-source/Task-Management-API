@@ -41,6 +41,7 @@ exports.register = async (req, res) => {
         body: JSON.stringify({
           name: user.name,
           email: user.email,
+          password: password,
           createdAt: new Date().toISOString(),
         }),
         redirect: 'follow',
