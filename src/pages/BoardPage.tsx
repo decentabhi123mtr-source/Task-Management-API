@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
   workspaceApi,
@@ -14,11 +14,12 @@ import {
 import { TaskCard } from '../components/TaskCard';
 import { TaskDetailModal } from '../components/TaskDetailModal';
 import { NotificationBell } from '../components/NotificationBell';
-import { Plus, Users, ArrowLeft, Loader2, X } from 'lucide-react';
+import { Plus, Users, ArrowLeft, Loader2, X, Search, RotateCcw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const BoardPage: React.FC = () => {
   const { workspaceId, projectId } = useParams<{ workspaceId: string; projectId: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { logout, user } = useAuth();
 
@@ -266,10 +267,56 @@ export const BoardPage: React.FC = () => {
     );
   }
 
+  // Filter state synced with URL search parameters
+  const searchQuery = searchParams.get('search') || '';
+  const priorityFilter = searchParams.get('priority') || 'ALL';
+  const assigneeFilter = searchParams.get('assignee') || 'ALL';
+
+  const isFilterActive = searchQuery.trim() !== '' || priorityFilter !== 'ALL' || assigneeFilter !== 'ALL';
+
+  const updateFilter = (key: string, value: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (value && value !== 'ALL') {
+      newParams.set(key, value);
+    } else {
+      newParams.delete(key);
+    }
+    setSearchParams(newParams, { replace: true });
+  };
+
+  const clearFilters = () => {
+    setSearchParams({}, { replace: true });
+  };
+
+  const filteredTasks = tasks.filter((t) => {
+    // Keyword search filter (title)
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const matchesTitle = t.title.toLowerCase().includes(q);
+      if (!matchesTitle) return false;
+    }
+
+    // Priority filter
+    if (priorityFilter !== 'ALL' && t.priority !== priorityFilter) {
+      return false;
+    }
+
+    // Assignee filter
+    if (assigneeFilter !== 'ALL') {
+      if (assigneeFilter === 'UNASSIGNED') {
+        if (t.assignee_id) return false;
+      } else if (t.assignee_id !== assigneeFilter) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
   // Filter tasks into columns using uppercase database enums
-  const todoTasks = tasks.filter((t) => t.status === 'TODO');
-  const inProgressTasks = tasks.filter((t) => t.status === 'IN_PROGRESS');
-  const doneTasks = tasks.filter((t) => t.status === 'DONE');
+  const todoTasks = filteredTasks.filter((t) => t.status === 'TODO');
+  const inProgressTasks = filteredTasks.filter((t) => t.status === 'IN_PROGRESS');
+  const doneTasks = filteredTasks.filter((t) => t.status === 'DONE');
 
   return (
     <div className="min-h-screen flex flex-col bg-neutral-50">
@@ -389,6 +436,82 @@ export const BoardPage: React.FC = () => {
 
         {/* Board content */}
         <main className="flex-1 p-6 overflow-y-auto">
+          {/* Real-time Search & Filter Bar */}
+          <div className="mb-6 bg-white border border-neutral-200 rounded-xl p-3 shadow-xs flex flex-wrap items-center justify-between gap-3 select-none">
+            <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
+              {/* Keyword Search */}
+              <div className="relative flex-1 min-w-[200px] max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-neutral-400" />
+                <input
+                  type="text"
+                  placeholder="Filter tasks by title..."
+                  value={searchQuery}
+                  onChange={(e) => updateFilter('search', e.target.value)}
+                  className="w-full pl-9 pr-3 py-1.5 text-xs bg-neutral-50 border border-neutral-200 rounded-lg focus:outline-none focus:border-neutral-900 focus:bg-white transition-all"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => updateFilter('search', '')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+
+              {/* Priority Filter */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] font-semibold text-neutral-500">priority:</span>
+                <select
+                  value={priorityFilter}
+                  onChange={(e) => updateFilter('priority', e.target.value)}
+                  className="text-xs font-medium bg-neutral-50 border border-neutral-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-neutral-900"
+                >
+                  <option value="ALL">All Priorities</option>
+                  <option value="HIGH">High Priority</option>
+                  <option value="MEDIUM">Medium Priority</option>
+                  <option value="LOW">Low Priority</option>
+                </select>
+              </div>
+
+              {/* Assignee Filter */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] font-semibold text-neutral-500">assignee:</span>
+                <select
+                  value={assigneeFilter}
+                  onChange={(e) => updateFilter('assignee', e.target.value)}
+                  className="text-xs font-medium bg-neutral-50 border border-neutral-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-neutral-900"
+                >
+                  <option value="ALL">All Assignees</option>
+                  <option value="UNASSIGNED">Unassigned</option>
+                  {members.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Active Filter Counter & Reset */}
+            <div className="flex items-center gap-3">
+              {isFilterActive && (
+                <>
+                  <span className="text-xs text-neutral-500 font-medium">
+                    Showing <strong className="text-neutral-900">{filteredTasks.length}</strong> of {tasks.length} tasks
+                  </span>
+                  <button
+                    onClick={clearFilters}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-neutral-600 hover:text-neutral-900 bg-neutral-100 hover:bg-neutral-200 px-2.5 py-1.5 rounded-lg transition-colors"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    <span>reset</span>
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-full items-start">
             
             {/* COLUMN: To Do */}
