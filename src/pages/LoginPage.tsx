@@ -32,7 +32,12 @@ export const LoginPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error(err);
-      setError(err.response?.data?.message || err.message || 'An error occurred during authentication');
+      const msg = err.response?.data?.message || err.message || 'An error occurred during authentication';
+      if (msg === 'Network Error') {
+        setError('Network Error: Cannot reach backend server. Please verify the backend is running at http://localhost:5000 or your VITE_API_URL setting.');
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
