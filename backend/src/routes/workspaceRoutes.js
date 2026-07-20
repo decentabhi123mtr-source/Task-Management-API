@@ -9,6 +9,8 @@ router.use(authMiddleware);
 
 router.post('/', workspaceController.createWorkspace);
 router.get('/', workspaceController.listWorkspaces);
+router.patch('/:id', workspaceController.updateWorkspace);
+router.delete('/:id/leave', workspaceController.leaveWorkspace);
 router.post('/:id/invite', workspaceController.inviteMember);
 router.patch('/:id/members/:userId', workspaceController.changeMemberRole);
 

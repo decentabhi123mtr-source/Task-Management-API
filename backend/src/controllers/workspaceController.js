@@ -45,11 +45,116 @@ exports.listWorkspaces = async (req, res) => {
           },
         },
       },
+      include: {
+        projects: {
+          select: { id: true, name: true, status: true },
+        },
+        members: {
+          include: {
+            user: {
+              select: { id: true, name: true, email: true },
+            },
+          },
+        },
+      },
     });
 
-    return res.json(workspaces);
+    return res.json(
+      workspaces.map((ws) => {
+        const myMember = ws.members.find((m) => m.user_id === userId);
+        return {
+          id: ws.id,
+          name: ws.name,
+          owner_id: ws.owner_id,
+          role: myMember ? myMember.role : 'MEMBER',
+          projectsCount: ws.projects.length,
+          membersCount: ws.members.length,
+          members: ws.members.map((m) => ({
+            id: m.user.id,
+            name: m.user.name,
+            email: m.user.email,
+            role: m.role,
+          })),
+        };
+      })
+    );
   } catch (error) {
     console.error('List workspaces error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// PATCH /api/workspaces/:id - Rename workspace
+exports.updateWorkspace = async (req, res) => {
+  const workspaceId = req.params.id;
+  const { name } = req.body;
+  const userId = req.user.id;
+
+  if (!name || !name.trim()) {
+    return res.status(400).json({ message: 'Workspace name is required' });
+  }
+
+  try {
+    const membership = await prisma.workspaceMember.findUnique({
+      where: {
+        user_id_workspace_id: {
+          user_id: userId,
+          workspace_id: workspaceId,
+        },
+      },
+    });
+
+    if (!membership || !['OWNER', 'ADMIN'].includes(membership.role)) {
+      return res.status(403).json({ message: 'Access denied: Only owners and admins can rename the workspace' });
+    }
+
+    const updated = await prisma.workspace.update({
+      where: { id: workspaceId },
+      data: { name: name.trim() },
+    });
+
+    return res.json(updated);
+  } catch (error) {
+    console.error('Update workspace error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// DELETE /api/workspaces/:id/leave - Leave workspace
+exports.leaveWorkspace = async (req, res) => {
+  const workspaceId = req.params.id;
+  const userId = req.user.id;
+
+  try {
+    const membership = await prisma.workspaceMember.findUnique({
+      where: {
+        user_id_workspace_id: {
+          user_id: userId,
+          workspace_id: workspaceId,
+        },
+      },
+    });
+
+    if (!membership) {
+      return res.status(404).json({ message: 'You are not a member of this workspace' });
+    }
+
+    if (membership.role === 'OWNER') {
+      return res.status(400).json({ message: 'Workspace owner cannot leave the workspace.' });
+    }
+
+    await prisma.workspaceMember.delete({
+      where: {
+        user_id_workspace_id: {
+          user_id: userId,
+          workspace_id: workspaceId,
+        },
+      },
+    });
+
+    return res.json({ message: 'Successfully left the workspace' });
+  } catch (error) {
+    console.error('Leave workspace error:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 };

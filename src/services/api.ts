@@ -39,6 +39,10 @@ export interface Workspace {
   id: string;
   name: string;
   owner_id: string;
+  role?: 'OWNER' | 'ADMIN' | 'MEMBER';
+  projectsCount?: number;
+  membersCount?: number;
+  members?: { id: string; name: string; email: string; role: string }[];
 }
 
 export interface WorkspaceMember {
@@ -119,6 +123,10 @@ export const authApi = {
 export const workspaceApi = {
   list: () => api.get<Workspace[]>('/workspaces').then(res => res.data),
   create: (data: { name: string }) => api.post<Workspace>('/workspaces', data).then(res => res.data),
+  rename: (workspaceId: string, data: { name: string }) => 
+    api.patch<Workspace>(`/workspaces/${workspaceId}`, data).then(res => res.data),
+  leave: (workspaceId: string) => 
+    api.delete<{ message: string }>(`/workspaces/${workspaceId}/leave`).then(res => res.data),
   invite: (workspaceId: string, data: { email: string; role: string }) => 
     api.post(`/workspaces/${workspaceId}/invite`, data).then(res => res.data),
   getProjects: (workspaceId: string) => 
